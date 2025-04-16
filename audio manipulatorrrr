@@ -1,100 +1,116 @@
-var mode = 0;
+let mode = 0; // 0: Splash Screen, 1: Main App
+let splash;
+let triOsc, triEnv, tempoSlider, button, mySelect;
+let randFreq = 100;
+let vars = [250, 250, 125, 125];
+let counter = 0;
+let currentTime = 0;
 
 function setup() {
+  // Canvas setup
   createCanvas(windowWidth, windowHeight);
+  background(0);
+
+  // Initialize Splash screen
   splash = new Splash();
-}
 
-function draw() {
-  if (mouseIsPressed == true && splash.update() == true) {
-    mode = 1;
-  }
-  
-  if (mode == 1) {
-    splash.hide();
-    
-    let vars = [250, 250, 125, 125];
-var counter = 0;
-var currentTime = 0;
+  // Initialize UI Elements
+  tempoSlider = createSlider(0, 300, 0);
+  tempoSlider.position(30, 30);
 
-let triOsc;
-let triEnv;
-
-let tempo = 0
-
-let tempoSlider
-
-let button, mySelect
-let randFreq = 100
-
-
-
-function setup() {
-  
-  createCanvas(700, 700)
-  background(0)
-  
-  tempoSlider = createSlider(0, 300)
-  tempoSlider.position(30, 30)
-  
-  button = createButton("random frequency")
-  button.position(30, 60)
-  button.mousePressed(doTheThing)
-  
-  fill(255)
-  text("TEMPO", 170, 45)
-  
-
-  triOsc = new p5.Oscillator('triangle');
-  triOsc.freq(300);
-  triOsc.amp(0);
-  triOsc.start();
-  
-  triEnv = new p5.Envelope(0.01, .9, .1, 0);
-  
+  button = createButton("Random Frequency");
+  button.position(30, 60);
+  button.mousePressed(generateRandomFrequency);
 
   mySelect = createSelect();
   mySelect.position(30, 90);
+  mySelect.option("Triangle");
+  mySelect.option("Square");
 
-  // Add color options.
-  mySelect.option('triangle');
-  mySelect.option('square');
+  // Initialize Oscillator and Envelope
+  triOsc = new p5.Oscillator("triangle");
+  triOsc.freq(300);
+  triOsc.amp(0);
+  triOsc.start();
 
-  
-  
+  triEnv = new p5.Envelope(0.01, 0.9, 0.1, 0);
 }
 
-function draw(){
-  
-  tempo = tempoSlider.value()
-  console.log(mySelect.selected())
-  
-  if(millis() > currentTime+vars[counter]-tempo){
-    currentTime = millis()
-    counter++
-    triOsc.freq(randFreq);
-    triEnv.play(triOsc);
-    if(counter > 3){
-      counter = 0
+function draw() {
+  if (mode === 0) {
+    // Splash Screen Mode
+    splash.display();
+    if (mouseIsPressed && splash.update()) {
+      mode = 1; // Switch to Main App
+      splash.hide();
+      background(255);
     }
-    
-  }
- 
-
-}
-
-function doTheThing(){
-  console.log("pressed")
-  randFreq = random(80, 400)
-}
+  } else if (mode === 1) {
+    // Main App Mode
     background(255);
     fill(100);
     noStroke();
     rect(50, 50, windowWidth - 100, windowHeight - 100);
+
+    // Draw audio visualization
     fill(0);
     ellipse(mouseX, mouseY, 20, 20);
+
+    // Audio Manipulation Logic
+    let tempo = tempoSlider.value();
+    if (millis() > currentTime + vars[counter] - tempo) {
+      currentTime = millis();
+      counter++;
+      triOsc.freq(randFreq);
+      triEnv.play(triOsc);
+
+      if (counter > vars.length - 1) {
+        counter = 0;
+      }
+    }
+
+    // Display UI Elements
+    fill(255);
+    text("TEMPO", 170, 45);
+    text("Waveform: " + mySelect.selected(), 30, 120);
+
+    // Update Oscillator waveform based on selection
+    let waveform = mySelect.selected();
+    if (waveform === "Triangle") {
+      triOsc.setType("triangle");
+    } else if (waveform === "Square") {
+      triOsc.setType("square");
+    }
   }
 }
 
+function generateRandomFrequency() {
+  console.log("Random Frequency Button Pressed");
+  randFreq = random(80, 400);
+}
 
+// Splash Screen Class
+class Splash {
+  constructor() {
+    this.active = true;
+  }
 
+  update() {
+    // Check if splash screen is ready to be dismissed
+    return this.active;
+  }
+
+  hide() {
+    this.active = false;
+  }
+
+  display() {
+    background(0);
+    fill(255);
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    text("Welcome to Audio Manipulator!", width / 2, height / 2);
+    textSize(16);
+    text("Click anywhere to start", width / 2, height / 2 + 40);
+  }
+}
