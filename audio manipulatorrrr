@@ -1,6 +1,6 @@
 let mode = 0; // 0: Splash Screen, 1: Main App
 let splash;
-let triOsc, triEnv, tempoSlider, button, mySelect;
+let triOsc, triEnv, tempoSlider, button, mySelect, reverb;
 let randFreq = 100;
 let vars = [250, 250, 125, 125];
 let counter = 0;
@@ -8,7 +8,7 @@ let currentTime = 0;
 
 function setup() {
   // Canvas setup
-  createCanvas(windowWidth, windowHeight);
+  createCanvas(600,600); 
   background(0);
 
   // Initialize Splash screen
@@ -34,6 +34,10 @@ function setup() {
   triOsc.start();
 
   triEnv = new p5.Envelope(0.01, 0.9, 0.1, 0);
+
+  // Initialize Reverb
+  reverb = new p5.Reverb();
+  reverb.process(triOsc, 3, 2); // Add reverb effect with decay time and damping
 }
 
 function draw() {
@@ -50,11 +54,10 @@ function draw() {
     background(255);
     fill(100);
     noStroke();
-    rect(50, 50, windowWidth - 100, windowHeight - 100);
+    rect(50, 50, width - 100, height - 100); // Adjusted for 400x400 canvas
 
-    // Draw audio visualization
+    // Draw audio visualization (removed black dot)
     fill(0);
-    ellipse(mouseX, mouseY, 20, 20);
 
     // Audio Manipulation Logic
     let tempo = tempoSlider.value();
