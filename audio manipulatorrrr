@@ -1,0 +1,75 @@
+let vars = [250, 250, 125, 125];
+var counter = 0;
+var currentTime = 0;
+
+let triOsc;
+let triEnv;
+
+let tempo = 0
+
+let tempoSlider
+
+let button, mySelect
+let randFreq = 100
+
+
+
+function setup() {
+  
+  createCanvas(700, 700)
+  background(0)
+  
+  tempoSlider = createSlider(0, 300)
+  tempoSlider.position(30, 30)
+  
+  button = createButton("random frequency")
+  button.position(30, 60)
+  button.mousePressed(doTheThing)
+  
+  fill(255)
+  text("TEMPO", 170, 45)
+  
+
+  triOsc = new p5.Oscillator('triangle');
+  triOsc.freq(300);
+  triOsc.amp(0);
+  triOsc.start();
+  
+  triEnv = new p5.Envelope(0.01, .9, .1, 0);
+  
+
+  mySelect = createSelect();
+  mySelect.position(30, 90);
+
+  // Add color options.
+  mySelect.option('triangle');
+  mySelect.option('square');
+
+  
+  
+}
+
+function draw(){
+  
+  tempo = tempoSlider.value()
+  console.log(mySelect.selected())
+  
+  if(millis() > currentTime+vars[counter]-tempo){
+    currentTime = millis()
+    counter++
+    triOsc.freq(randFreq);
+    triEnv.play(triOsc);
+    if(counter > 3){
+      counter = 0
+    }
+    
+  }
+ 
+
+}
+
+function doTheThing(){
+  console.log("pressed")
+  randFreq = random(80, 400)
+}
+
