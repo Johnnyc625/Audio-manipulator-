@@ -1,119 +1,110 @@
-let mode = 0; // 0: Splash Screen, 1: Main App
-let splash;
-let triOsc, triEnv, tempoSlider, button, mySelect, reverb;
-let randFreq = 100;
-let vars = [250, 250, 125, 125];
-let counter = 0;
-let currentTime = 0;
+let soundFile;
+let fileInput;
+let playButton, stopButton;
+let volSlider;
+
+let isSoundLoaded = false;
+let instructions = "Load an audio file (WAV, MP3, OGG)";
 
 function setup() {
-  // Canvas setup
-  createCanvas(600,600); 
-  background(0);
+  createCanvas(400, 300);
+  background(200);
+  textAlign(CENTER, CENTER);
 
-  // Initialize Splash screen
-  splash = new Splash();
+  // --- UI Elements ---
+  fileInput = createFileInput(handleFile);
+  fileInput.position(20, 30);
 
-  // Initialize UI Elements
-  tempoSlider = createSlider(0, 300, 0);
-  tempoSlider.position(30, 30);
+  playButton = createButton('Play');
+  playButton.position(20, 70);
+  playButton.mousePressed(playAudio);
+  playButton.attribute('disabled', '');
 
-  button = createButton("Random Frequency");
-  button.position(30, 60);
-  button.mousePressed(generateRandomFrequency);
+  stopButton = createButton('Stop');
+  stopButton.position(80, 70);
+  stopButton.mousePressed(stopAudio);
+  stopButton.attribute('disabled', '');
 
-  mySelect = createSelect();
-  mySelect.position(30, 90);
-  mySelect.option("Triangle");
-  mySelect.option("Square");
-
-  // Initialize Oscillator and Envelope
-  triOsc = new p5.Oscillator("triangle");
-  triOsc.freq(300);
-  triOsc.amp(0);
-  triOsc.start();
-
-  triEnv = new p5.Envelope(0.01, 0.9, 0.1, 0);
-
-  // Initialize Reverb
-  reverb = new p5.Reverb();
-  reverb.process(triOsc, 3, 2); // Add reverb effect with decay time and damping
+  volSlider = createSlider(0, 1, 0.5, 0.01);
+  volSlider.position(20, 120);
+  volSlider.input(updateVolume);
+  // todo: Add label for the volume slider
 }
 
 function draw() {
-  if (mode === 0) {
-    // Splash Screen Mode
-    splash.display();
-    if (mouseIsPressed && splash.update()) {
-      mode = 1; // Switch to Main App
-      splash.hide();
-      background(255);
+  background(200);
+
+  // Display status text
+  fill(0);
+  textSize(14);
+  text(instructions, width / 2, 180);
+
+  // todo: add simple visualization later?
+  // if (isSoundLoaded && soundFile.isPlaying()) {
+  //   let level = soundFile.getLevel(); // Need an Amplitude object
+  //   ellipse(width/2, height - 50, level * 100, level * 100);
+  // }
+}
+
+// --- Audio Loading ---
+function handleFile(file) {
+  print("Attempting to load:", file.name);
+  if (file.type === 'audio') {
+    if (soundFile) {
+      soundFile.stop(); // Stop previous sound
     }
-  } else if (mode === 1) {
-    // Main App Mode
-    background(255);
-    fill(100);
-    noStroke();
-    rect(50, 50, width - 100, height - 100); // Adjusted for 400x400 canvas
+    isSoundLoaded = false;
+    playButton.attribute('disabled', '');
+    stopButton.attribute('disabled', '');
+    instructions = "Loading: " + file.name;
 
-    // Draw audio visualization (removed black dot)
-    fill(0);
+    // Load the new sound file
+    soundFile = loadSound(file, soundLoadedCallback);
 
-    // Audio Manipulation Logic
-    let tempo = tempoSlider.value();
-    if (millis() > currentTime + vars[counter] - tempo) {
-      currentTime = millis();
-      counter++;
-      triOsc.freq(randFreq);
-      triEnv.play(triOsc);
-
-      if (counter > vars.length - 1) {
-        counter = 0;
-      }
-    }
-
-    // Display UI Elements
-    fill(255);
-    text("TEMPO", 170, 45);
-    text("Waveform: " + mySelect.selected(), 30, 120);
-
-    // Update Oscillator waveform based on selection
-    let waveform = mySelect.selected();
-    if (waveform === "Triangle") {
-      triOsc.setType("triangle");
-    } else if (waveform === "Square") {
-      triOsc.setType("square");
-    }
+  } else {
+    instructions = "Please select an audio file.";
+    console.log("Not an audio file!");
   }
 }
 
-function generateRandomFrequency() {
-  console.log("Random Frequency Button Pressed");
-  randFreq = random(80, 400);
+function soundLoadedCallback() {
+  console.log("Sound loaded!");
+  isSoundLoaded = true;
+  instructions = "Loaded: " + soundFile.file.name;
+
+  // Enable controls
+  playButton.removeAttribute('disabled');
+  stopButton.removeAttribute('disabled');
+
+  updateVolume(); // Apply initial volume
+
+  // todo: add error handling for failed loads
 }
 
-// Splash Screen Class
-class Splash {
-  constructor() {
-    this.active = true;
-  }
-
-  update() {
-    // Check if splash screen is ready to be dismissed
-    return this.active;
-  }
-
-  hide() {
-    this.active = false;
-  }
-
-  display() {
-    background(0);
-    fill(255);
-    textSize(32);
-    textAlign(CENTER, CENTER);
-    text("Welcome to Audio Manipulator!", width / 2, height / 2);
-    textSize(16);
-    text("Click anywhere to start", width / 2, height / 2 + 40);
+// --- Playback Controls ---
+function playAudio() {
+  if (isSoundLoaded && !soundFile.isPlaying()) {
+    soundFile.play();
+    console.log("Playing");
+    // todo: maybe change button text to "Pause"
   }
 }
+
+function stopAudio() {
+  if (isSoundLoaded) {
+    soundFile.stop();
+    console.log("Stopped");
+  }
+}
+
+// --- Audio Manipulation ---
+function updateVolume() {
+  if (isSoundLoaded) {
+    soundFile.setVolume(volSlider.value());
+  }
+}
+
+// todo: implement Rate/Speed control slider
+// todo: implement basic Filter effect
+// todo: implement Reverse button
+// todo: add progress bar/display
