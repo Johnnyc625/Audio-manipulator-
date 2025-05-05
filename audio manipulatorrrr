@@ -160,10 +160,11 @@ class Splash {
     if (!this.active) return;
     background(0); fill(255); textAlign(CENTER, CENTER);
     textSize(32); text("Audio Manipulator", 150, 50);
-    textSize(16); text("Click anywhere to start", width /2, height / 2 + 200);
+    textSize(16); text("Yihang Cheng", width /2, height / 2 + 200);
     textSize(12); text("Welcome to the Audio Manipulator!" , width / 2, height / 2 - 20);
     textSize(12); text("Load your favorite sound file and dive into a world of sonic exploration." , width / 2, height / 2 -10);
     textSize(12); text("Play with effects, change the playback, and sculpt your audio in real-time. Click anywhere to begin your sound adventure!", width / 2, height / 2 );
+    textSize(12); text("https://editor.p5js.org/chengjohnny625/sketches/9QcDhLc52", width / 2, height / 2 +10);
     
   }
 }
