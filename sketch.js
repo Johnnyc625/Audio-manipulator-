@@ -5,19 +5,25 @@ let fileInput;
 let isSoundLoaded = false;
 let instructions = "Load an audio file (WAV, MP3, OGG)";
 let reverb;
-let isLoaded = false;
 let playButton, stopButton;
 let volSlider;
 let rateSlider;
 let progressSlider;
-let superBassFilter; 
+let superBassFilter;
 let superBassToggle;
-let superBassFreqSlider; 
+let superBassFreqSlider;
+let myP5Link;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   background(200);
   textAlign(LEFT, TOP);
+
+  myP5Link = createA('https://editor.p5js.org/chengjohnny625/sketches/9QcDhLc52', 'View p5.js Sketch', '_blank');
+  myP5Link.style('color', '#87CEEB');
+  myP5Link.style('font-size', '12px');
+  myP5Link.style('text-decoration', 'underline');
+  myP5Link.hide();
 
   splash = new Splash();
 
@@ -25,14 +31,12 @@ function setup() {
   let spacing = 45;
   let sliderWidth = '180px';
   let labelX = 20;
-  let controlX = 180; 
+  let controlX = 180;
 
   fileInput = createFileInput(handleFile);
   fileInput.position(labelX, currentY);
   fileInput.hide();
   currentY += spacing;
-  reverb = new p5.Reverb();
-
 
   playButton = createButton('Play');
   playButton.position(labelX, currentY);
@@ -69,8 +73,8 @@ function setup() {
   rateSlider.hide();
   currentY += spacing + 10;
 
-  superBassFilter = new p5.Filter('lowpass'); 
-  superBassToggle = createCheckbox(' Super Bass Filter', false); 
+  superBassFilter = new p5.Filter('lowpass');
+  superBassToggle = createCheckbox(' Super Bass Filter', false);
   superBassToggle.position(labelX, currentY);
   superBassToggle.changed(applyEffectsChain);
   superBassToggle.hide();
@@ -80,18 +84,30 @@ function setup() {
   superBassFreqSlider.style('width', sliderWidth);
   superBassFreqSlider.input(applyEffectsChain);
   superBassFreqSlider.hide();
+
+  reverb = new p5.Reverb();
 }
 
 function draw() {
   if (mode === 0) {
     splash.display();
-    if (mouseIsPressed === true && splash.update() === true) {
+
+    let clickedOnLink = false;
+    if (myP5Link && mouseIsPressed && myP5Link.elt.style.display !== 'none') {
+        const linkRect = myP5Link.elt.getBoundingClientRect();
+        if (mouseX >= linkRect.left && mouseX <= linkRect.right &&
+            mouseY >= linkRect.top && mouseY <= linkRect.bottom) {
+            clickedOnLink = true;
+        }
+    }
+
+    if (mouseIsPressed === true && splash.update() === true && !clickedOnLink) {
       mode = 1;
       splash.hide();
       showMainAppUI();
     }
   } else if (mode === 1) {
-    background(150,250,150);
+    background(150, 250, 150);
     fill(0);
     textSize(14);
     textAlign(LEFT, TOP);
@@ -117,34 +133,29 @@ function draw() {
 
     text("Effects:", labelX, currentY);
     currentY += spacing;
-    
 
     text("Bass Focus Freq:", controlX, currentY);
-    if (superBassToggle.checked()) { 
-         text(superBassFreqSlider.value() + " Hz", controlX + 190, currentY);
+    if (superBassToggle.checked()) {
+      text(superBassFreqSlider.value() + " Hz", controlX + 190, currentY);
     }
-    
+
+    let reverbDisplayY = currentY + spacing;
+
+    if (isSoundLoaded) {
+      let dryWet = map(mouseX, 0, width, 0, 1);
+      dryWet = constrain(dryWet, 0, 1);
+      reverb.drywet(dryWet);
+
+      fill(0);
+      text("Reverb Mix (Mouse L/R):", labelX, reverbDisplayY);
+      text(round(dryWet * 100) + "%", valueX, reverbDisplayY);
+    }
+
     if (isSoundLoaded && soundFile.isPlaying()) {
       if (!progressSlider.elt.matches(':active')) {
-         progressSlider.value(soundFile.currentTime());
+        progressSlider.value(soundFile.currentTime());
       }
     }
-    
-    fill(0);
-  text(instructions, 10, 50);
-
-  if (isLoaded) {
-    text('Click canvas to Play/Stop sound.', 100, 700);
-    text('Move mouse L/R to change Dry/Wet mix.', 100, 750);
-
-    let dryWet = map(mouseX, 0, width, 0, 1);
-    dryWet = constrain(dryWet, 0, 1);
-
-    reverb.drywet(dryWet);
-
-    text('Dry/Wet Mix: ' + round(dryWet * 100) + '%', 10, height - 30);
-  } 
-
 
     textAlign(CENTER, BOTTOM);
     text(instructions, width / 2, height - 20);
@@ -153,19 +164,39 @@ function draw() {
 
 
 class Splash {
-  constructor() { this.active = true; }
+  constructor() {
+    this.active = true;
+  }
   update() { return this.active; }
-  hide() { this.active = false; }
+  hide() {
+    this.active = false;
+    if (myP5Link) myP5Link.hide();
+  }
   display() {
-    if (!this.active) return;
+    if (!this.active) {
+        if (myP5Link) myP5Link.hide();
+        return;
+    }
     background(0); fill(255); textAlign(CENTER, CENTER);
-    textSize(32); text("Audio Manipulator", 150, 50);
-    textSize(16); text("Yihang Cheng", width /2, height / 2 + 200);
-    textSize(12); text("Welcome to the Audio Manipulator!" , width / 2, height / 2 - 20);
-    textSize(12); text("Load your favorite sound file and dive into a world of sonic exploration." , width / 2, height / 2 -10);
-    textSize(12); text("Play with effects, change the playback, and sculpt your audio in real-time. Click anywhere to begin your sound adventure!", width / 2, height / 2 );
-    textSize(12); text("https://editor.p5js.org/chengjohnny625/sketches/9QcDhLc52", width / 2, height / 2 +10);
-    
+    textSize(32); text("Audio Manipulator", width / 2, 50 + (height/2 - 150) );
+    textSize(16); text("Yihang Cheng", width / 2, height - 40);
+    textSize(12);
+    let textY = height / 2 - 60;
+    text("Welcome to the Audio Manipulator!", width / 2, textY); textY += 15;
+    text("Load your favorite sound file and dive into a world of sonic exploration.", width / 2, textY); textY += 15;
+    text("Play with effects, change the playback, and sculpt your audio in real-time.", width / 2, textY); textY += 25;
+
+    if (myP5Link) {
+        let linkText = myP5Link.html();
+        textSize(12);
+        let linkWidth = textWidth(linkText);
+        myP5Link.position(width / 2 - linkWidth / 2, textY);
+        myP5Link.show();
+    }
+    textY += 30;
+
+    textSize(14);
+    text("Click anywhere else to begin your sound adventure!", width / 2, textY);
   }
 }
 
@@ -176,8 +207,9 @@ function showMainAppUI() {
   progressSlider.show();
   volSlider.show();
   rateSlider.show();
-  superBassToggle.show(); 
+  superBassToggle.show();
   superBassFreqSlider.show();
+  if (myP5Link) myP5Link.hide();
 }
 
 
@@ -186,8 +218,8 @@ function handleFile(file) {
     if (soundFile) {
       soundFile.stop();
       soundFile.disconnect();
-      superBassFilter.disconnect(); 
-      reverb.disconnect(); 
+      superBassFilter.disconnect();
+      reverb.disconnect();
     }
     isSoundLoaded = false;
     disablePlaybackControls();
@@ -195,23 +227,11 @@ function handleFile(file) {
     soundFile = loadSound(file, soundLoadedCallback, soundLoadError);
   } else {
     instructions = "Please select an audio file (MP3, WAV, OGG).";
-  }
-    if (file.type === 'audio') {
-    instructions = "Loading: " + file.name;
-    isLoaded = false; 
-
-  
-    soundFile = loadSound(file, soundLoadedCallback, soundLoadError);
-
-  } else {
-    instructions = "Error: Please upload an audio file (MP3, WAV, OGG).";
     console.error("Uploaded file is not an audio type.");
   }
-
 }
 
 function soundLoadedCallback() {
-  isLoaded = true;
   isSoundLoaded = true;
   instructions = "Loaded: " + soundFile.file.name;
   progressSlider.elt.max = soundFile.duration();
@@ -220,7 +240,6 @@ function soundLoadedCallback() {
   updateVolume();
   updateRate();
   applyEffectsChain();
-  reverb.process(soundFile, 3, 2); 
 }
 
 function soundLoadError(err) {
@@ -246,13 +265,15 @@ function disablePlaybackControls() {
 
 
 function playAudio() {
-  if (isSoundLoaded && !soundFile.isPlaying()) soundFile.play();
+  if (isSoundLoaded && !soundFile.isPlaying()) {
+    soundFile.jump(progressSlider.value());
+    soundFile.play();
+  }
 }
 
 function stopAudio() {
   if (isSoundLoaded) {
-    soundFile.pause();
-    //progressSlider.value(0);
+    soundFile.stop();
   }
 }
 
@@ -274,13 +295,14 @@ function applyEffectsChain() {
     let lastNode = soundFile;
 
     soundFile.disconnect();
-    superBassFilter.disconnect(); 
+    superBassFilter.disconnect();
+    reverb.disconnect();
 
-    if (superBassToggle.checked()) { 
+    if (superBassToggle.checked()) {
         superBassFilter.freq(superBassFreqSlider.value());
-        lastNode.connect(superBassFilter); 
-        lastNode = superBassFilter; 
+        lastNode.connect(superBassFilter);
+        lastNode = superBassFilter;
     }
 
-    lastNode.connect(); 
+    reverb.process(lastNode, 3, 2);
 }
